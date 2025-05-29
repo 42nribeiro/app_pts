@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Pro Training v33</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <?!= HtmlService.createHtmlOutputFromFile('style33').getContent(); ?>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0/dist/chartjs-adapter-luxon.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div class="header-content-wrapper">
+        <div class="header-top">
+          <button id="toggleFilter" class="btn btn-light btn-sm" title="Alternar Filtros"><i class="fas fa-filter"></i></button>
+          <div class="header-logo-container">
+            <img src="https://res.cloudinary.com/duf4kjbu0/image/upload/v1745222275/logo_ua4ev1_1e6228.png" alt="Logo ProTraining" class="header-logo" id="appIcon">
+          </div>
+          <div class="header-controls"></div>
+        </div>
+        <div id="header-stats-bar" class="mb-2">
+            <div class="stat-item"><span class="stat-label">Total:</span><input type="text" id="numeroTreinos" value="0" class="stat-value form-control-sm" readonly></div>
+            <div class="stat-item"><span class="stat-label">Done:</span><input type="text" id="treinosConcluidos" value="0" class="stat-value form-control-sm" readonly></div>
+            <div class="stat-item"><span class="stat-label">Nível:</span><input type="text" id="filtroNivel" value="--" class="stat-value form-control-sm" readonly></div>
+            <div class="stat-item"><span class="stat-label">Horas:</span><input type="text" id="filtroHoras" value="--" class="stat-value form-control-sm" readonly></div>
+        </div>
+      </div>
+      <div id="filter-container" class="collapsed">
+          <div class="filter-grid-container">
+<div class="filter-item input-group" id="filter-cliente">
+    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+    <input type="text" id="nomeFiltro" class="form-control form-control-sm" placeholder="Nome Cliente (padrão: PRO)" autocomplete="on">
+    <div id="clienteSuggestionsDropdown" class="dropdown-item"></div>
+</div>
+              <div class="filter-item input-group" id="filter-date-range">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></div>
+                  <input type="text" id="dateRangeFilter" class="form-control form-control-sm flatpickr-input" placeholder="Período (padrão: Mês Atual)">
+              </div>
+              <div class="filter-item input-group" id="filter-cor">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-palette"></i></span></div>
+                  <select id="cor" class="form-control form-control-sm">
+                      <option value="">Todas</option>
+                      <option value="1">-- 1</option><option value="2">DN 2</option><option value="3">EL 3</option><option value="4">-- 4</option><option value="5">JP 5</option><option value="6">JM 6</option><option selected value="7">NR 7</option><option value="8">GIL 8</option><option value="9">-- 9</option><option value="10">-- 10</option><option value="11">-- 11</option>
+                  </select>
+              </div>
+              <div class="filter-item input-group" id="filter-pt">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-dumbbell"></i></span></div>
+                  <select id="personalTrainer" class="form-control form-control-sm">
+                      <option value="">PT (Todos)</option>
+                      <option value="PRO NR">PRO NR</option><option value="PRO JM">PRO JM</option><option value="PRO JP">PRO JP</option><option value="PRO DN">PRO DN</option><option value="PRO EL">PRO EL</option><option value="GIL">GIL</option>
+                  </select>
+              </div>
+              <div id="filter-button-container">
+                  <button class="btn btn-primary btn-sm" style="flex-grow: 1;"><i class="fas fa-search"></i> Planos</button>
+                  <button id="calcularMetricasBtn" class="btn btn-success btn-sm" title="Calcular Métricas">
+                    <i class="fas fa-calculator"></i> Métricas
+                  </button>
+                  <button id="estatisticasBtn" class="btn btn-light btn-sm" title="Ver Estatísticas do Cliente">
+                      <i class="fas fa-chart-pie"></i> Stats
+                  </button>
+              </div>
+          </div>
+      </div>
+    </header>
+
+    <main id="training-plans-wrapper">
+      <div id="training-plans" class="container-fluid"></div>
+    </main>
+
+    <div id="loading-indicator" style="display:none;"><i class="fas fa-spinner fa-spin"></i></div>
+
+    <div id="custom-alert-overlay" class="custom-alert-overlay"></div>
+    <div id="custom-alert" class="custom-alert" style="display:none;">
+        <p id="custom-alert-message"></p>
+        <button class="btn btn-primary">OK</button>
+    </div>
+
+    <div id="exercise-modal" class="exercise-select-modal" style="display:none;">
+      <div class="modal-content">
+        <button type="button" class="modal-close-btn" onclick="hideExerciseModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+        <h4>Selecionar Exercício</h4>
+        <input type="text" id="modal-search-input" class="form-control" placeholder="Buscar exercício..." autocomplete="off">
+        <div id="modal-exercise-list" class="modal-list-container"></div>
+      </div>
+    </div>
+
+    <div id="avaliacao-modal-overlay" class="custom-alert-overlay" style="display:none;" onclick="if(event.target === this) fecharModalAvaliacao()"></div>
+    <div id="avaliacao-modal" class="avaliacao-modal" style="display:none;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registar Avaliação Física</h5>
+                    <button type="button" class="btn-close" onclick="fecharModalAvaliacao()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="avaliacao-form">
+                        <input type="hidden" id="avaliacao-planUuid">
+                        <input type="hidden" id="avaliacao-contadorPlano">
+                        <div class="row">
+                            <div class="col-md-4 mb-2"><label for="aval-peso" class="form-label">Peso (kg)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-peso"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-altura" class="form-label">Altura (cm)</label><input type="number" step="1" class="form-control form-control-sm" id="aval-altura"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-massa-muscular" class="form-label">M. Muscular (kg)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-massa-muscular" placeholder="kg ou %"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-massa-gorda" class="form-label">M. Gorda (kg)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-massa-gorda" placeholder="kg ou %"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-gordura-visceral" class="form-label">G. Visceral (nível)</label><input type="number" step="1" class="form-control form-control-sm" id="aval-gordura-visceral"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-idade-biologica" class="form-label">Idade Biológica</label><input type="number" step="1" class="form-control form-control-sm" id="aval-idade-biologica"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-metabolismo-basal" class="form-label">Metab. Basal (kcal)</label><input type="number" step="1" class="form-control form-control-sm" id="aval-metabolismo-basal"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-massa-ossea" class="form-label">Massa Óssea (kg)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-massa-ossea"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-h2o" class="form-label">H2O (%)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-h2o"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-pressao-arterial" class="form-label">P. Arterial (Sis/Dia)</label><input type="text" class="form-control form-control-sm" id="aval-pressao-arterial" placeholder="ex: 120/80"></div>
+                            <div class="col-md-4 mb-2"><label for="aval-perimetro-abdominal" class="form-label">Per. Abdominal (cm)</label><input type="number" step="0.1" class="form-control form-control-sm" id="aval-perimetro-abdominal"></div>
+                        </div>
+                        <div class="mb-2"><label for="aval-observacoes" class="form-label">Observações Avaliação</label><textarea class="form-control form-control-sm" id="aval-observacoes" rows="2"></textarea></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalAvaliacao()">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="salvarAvaliacao()">Salvar Avaliação</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="estatisticas-modal-overlay" class="custom-alert-overlay" style="display:none;" onclick="if(event.target === this) fecharModalEstatisticas()"></div>
+    <div id="estatisticas-modal" class="estatisticas-modal" style="display:none;">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="estatisticas-titulo">Estatísticas do Cliente</h5>
+                    <button type="button" class="btn-close" onclick="fecharModalEstatisticas()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="estatisticas-body-content">
+                    <p id="estatisticas-cliente-periodo" class="text-muted mb-3"></p>
+                    <div class="form-check form-check-inline mb-3">
+                        <input class="form-check-input" type="checkbox" id="toggleXAxisLabels" checked onchange="toggleChartXAxisLabels()">
+                        <label class="form-check-label small" for="toggleXAxisLabels">Ocultar Eixos X / Títulos Y</label>
+                    </div>
+                    <div id="estatisticas-sem-dados" class="alert alert-info" style="display:none;">Nenhum dado de avaliação ou treino encontrado para os filtros aplicados.</div>
+
+                    <div id="estatisticas-graficos-container" class="mb-4" style="display:none;">
+                        <h6><i class="fas fa-chart-line"></i> Progresso Métricas de Avaliação</h6>
+                        <div class="form-group mb-3">
+                            <label for="select-eval-metric" class="form-label small">Selecionar Métrica:</label>
+                            <select id="select-eval-metric" class="form-control form-control-sm">
+                                <option value="peso">Peso (kg)</option>
+                                <option value="massaGorda">Massa Gorda</option>
+                                <option value="massaMuscular">Massa Muscular</option>
+                                <option value="metabolismoBasal">Metabolismo Basal (kcal)</option>
+                                <option value="h2o">H2O (%)</option>
+                                <option value="gorduraVisceral">Gordura Visceral (nível)</option>
+                                <option value="all">Mostrar Todos Separados</option>
+                            </select>
+                        </div>
+                        <div id="evaluation-charts-area">
+                            <div class="chart-container mb-3" id="eval-main-chart-container" style="display:none;">
+                                <canvas id="chart-evaluation-main"></canvas>
+                            </div>
+                            <div id="eval-all-charts-container" class="row" style="display:none;">
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-peso"></canvas></div></div>
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-massa-gorda"></canvas></div></div>
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-massa-muscular"></canvas></div></div>
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-metabolismo-basal"></canvas></div></div>
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-h2o"></canvas></div></div>
+                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-gordura-visceral"></canvas></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="estatisticas-workout-analysis-container" class="mb-4" style="display:none;">
+                        <h6><i class="fas fa-dumbbell"></i> Análise de Treinos</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="chart-container-pie"><canvas id="chart-muscle-group"></canvas></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="chart-container-pie"><canvas id="chart-objective"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="mt-3" id="exercise-main-progress-chart-container" style="display:none;">
+                             <h6 class="mt-4"><i class="fas fa-weight-hanging"></i> Progresso de Carga</h6>
+                            <div class="form-group mb-2">
+                                <label for="select-muscle-group-progress" class="form-label small">Selecionar Grupo Muscular:</label>
+                                <select id="select-muscle-group-progress" class="form-control form-control-sm">
+                                    <option value="all_groups_top">-- Top Exercícios (Todos Grupos) --</option>
+                                </select>
+                            </div>
+                            <div id="exercise-load-charts-by-group" class="row"></div>
+                        </div>
+                    </div>
+
+                    <div id="estatisticas-planos-detalhes" style="display:none;">
+                        <h6><i class="fas fa-clipboard-list"></i> Detalhes dos Treinos no Período</h6>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top" id="export-options-container" style="display:none;">
+                        <h6>Opções de Exportação</h6>
+                        <div id="report-options" class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="printOptEvalMetrics" value="evalMetrics" checked>
+                                <label class="form-check-label" for="printOptEvalMetrics">Métricas Avaliação</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="printOptWorkoutAnalysis" value="workoutAnalysis" checked>
+                                <label class="form-check-label" for="printOptWorkoutAnalysis">Análise Treinos</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="printOptPlanDetails" value="planDetails" checked>
+                                <label class="form-check-label" for="printOptPlanDetails">Detalhes Planos</label>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="imprimirEstatisticas()"><i class="fas fa-print"></i> Imprimir</button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="baixarPdfEstatisticas()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalEstatisticas()">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+  <?!= HtmlService.createHtmlOutputFromFile('script_33').getContent(); ?>
+</body>
+</html>
