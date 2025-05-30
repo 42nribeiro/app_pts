@@ -1,15 +1,16 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Pro Training v33</title>
+  <title>Pro Training App</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-  <?!= HtmlService.createHtmlOutputFromFile('style33').getContent(); ?>
+  <link rel="stylesheet" href="index.css">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -38,11 +39,11 @@
       </div>
       <div id="filter-container" class="collapsed">
           <div class="filter-grid-container">
-<div class="filter-item input-group" id="filter-cliente">
-    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
-    <input type="text" id="nomeFiltro" class="form-control form-control-sm" placeholder="Nome Cliente (padrão: PRO)" autocomplete="on">
-    <div id="clienteSuggestionsDropdown" class="dropdown-item"></div>
-</div>
+            <div class="filter-item input-group" id="filter-cliente">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                <input type="text" id="nomeFiltro" class="form-control form-control-sm" placeholder="Nome Cliente (padrão: PRO)" autocomplete="on">
+                <div id="clienteSuggestionsDropdown" class="dropdown-menu" style="width: 100%;"></div>
+            </div>
               <div class="filter-item input-group" id="filter-date-range">
                   <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></div>
                   <input type="text" id="dateRangeFilter" class="form-control form-control-sm flatpickr-input" placeholder="Período (padrão: Mês Atual)">
@@ -51,7 +52,17 @@
                   <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-palette"></i></span></div>
                   <select id="cor" class="form-control form-control-sm">
                       <option value="">Todas</option>
-                      <option value="1">-- 1</option><option value="2">DN 2</option><option value="3">EL 3</option><option value="4">-- 4</option><option value="5">JP 5</option><option value="6">JM 6</option><option selected value="7">NR 7</option><option value="8">GIL 8</option><option value="9">-- 9</option><option value="10">-- 10</option><option value="11">-- 11</option>
+                      <option value="1">Cor 1 (Azul)</option>
+                      <option value="2">Cor 2 (Verde)</option>
+                      <option value="3">Cor 3 (Roxo)</option>
+                      <option value="4">Cor 4 (Laranja)</option>
+                      <option value="5">Cor 5 (Amarelo)</option>
+                      <option value="6">Cor 6 (Vermelho)</option>
+                      <option value="7" selected>Cor 7 (Turquesa NR)</option>
+                      <option value="8">Cor 8 (Cinza GIL)</option>
+                      <option value="9">Cor 9 (Grafite)</option>
+                      <option value="10">Cor 10 (Borgonha)</option>
+                      <option value="11">Cor 11 (Verde Escuro)</option>
                   </select>
               </div>
               <div class="filter-item input-group" id="filter-pt">
@@ -62,11 +73,11 @@
                   </select>
               </div>
               <div id="filter-button-container">
-                  <button class="btn btn-primary btn-sm" style="flex-grow: 1;"><i class="fas fa-search"></i> Planos</button>
+                  <button id="buscarPlanosBtn" class="btn btn-primary btn-sm" style="flex-grow: 1;"><i class="fas fa-search"></i> Planos</button>
                   <button id="calcularMetricasBtn" class="btn btn-success btn-sm" title="Calcular Métricas">
                     <i class="fas fa-calculator"></i> Métricas
                   </button>
-                  <button id="estatisticasBtn" class="btn btn-light btn-sm" title="Ver Estatísticas do Cliente">
+                  <button id="estatisticasBtn" class="btn btn-info btn-sm" title="Ver Estatísticas do Cliente">
                       <i class="fas fa-chart-pie"></i> Stats
                   </button>
               </div>
@@ -75,7 +86,9 @@
     </header>
 
     <main id="training-plans-wrapper">
-      <div id="training-plans" class="container-fluid"></div>
+      <div id="training-plans" class="container-fluid">
+          <!-- Training plans will be rendered here -->
+      </div>
     </main>
 
     <div id="loading-indicator" style="display:none;"><i class="fas fa-spinner fa-spin"></i></div>
@@ -83,25 +96,25 @@
     <div id="custom-alert-overlay" class="custom-alert-overlay"></div>
     <div id="custom-alert" class="custom-alert" style="display:none;">
         <p id="custom-alert-message"></p>
-        <button class="btn btn-primary">OK</button>
+        <button id="custom-alert-ok-btn" class="btn btn-primary">OK</button>
     </div>
 
     <div id="exercise-modal" class="exercise-select-modal" style="display:none;">
       <div class="modal-content">
-        <button type="button" class="modal-close-btn" onclick="hideExerciseModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+        <button type="button" class="modal-close-btn" onclick="window.app.modalManager.hideExerciseModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
         <h4>Selecionar Exercício</h4>
-        <input type="text" id="modal-search-input" class="form-control" placeholder="Buscar exercício..." autocomplete="off">
+        <input type="text" id="modal-search-input" class="form-control" placeholder="Buscar exercício ou adicionar novo..." autocomplete="off">
         <div id="modal-exercise-list" class="modal-list-container"></div>
       </div>
     </div>
 
-    <div id="avaliacao-modal-overlay" class="custom-alert-overlay" style="display:none;" onclick="if(event.target === this) fecharModalAvaliacao()"></div>
+    <div id="avaliacao-modal-overlay" class="custom-alert-overlay" style="display:none;"></div>
     <div id="avaliacao-modal" class="avaliacao-modal" style="display:none;">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Registar Avaliação Física</h5>
-                    <button type="button" class="btn-close" onclick="fecharModalAvaliacao()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                    <button type="button" class="btn-close" onclick="window.app.modalManager.fecharModalAvaliacao()" aria-label="Fechar"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body">
                     <form id="avaliacao-form">
@@ -124,25 +137,25 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalAvaliacao()">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="salvarAvaliacao()">Salvar Avaliação</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.app.modalManager.fecharModalAvaliacao()">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="window.app.modalManager.salvarAvaliacao()">Salvar Avaliação</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="estatisticas-modal-overlay" class="custom-alert-overlay" style="display:none;" onclick="if(event.target === this) fecharModalEstatisticas()"></div>
+    <div id="estatisticas-modal-overlay" class="custom-alert-overlay" style="display:none;" ></div>
     <div id="estatisticas-modal" class="estatisticas-modal" style="display:none;">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="estatisticas-titulo">Estatísticas do Cliente</h5>
-                    <button type="button" class="btn-close" onclick="fecharModalEstatisticas()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                    <button type="button" class="btn-close" onclick="window.app.modalManager.fecharModalEstatisticas()" aria-label="Fechar"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body" id="estatisticas-body-content">
                     <p id="estatisticas-cliente-periodo" class="text-muted mb-3"></p>
                     <div class="form-check form-check-inline mb-3">
-                        <input class="form-check-input" type="checkbox" id="toggleXAxisLabels" checked onchange="toggleChartXAxisLabels()">
+                        <input class="form-check-input" type="checkbox" id="toggleXAxisLabels" checked onchange="window.app.chartManager.toggleChartXAxisLabels()">
                         <label class="form-check-label small" for="toggleXAxisLabels">Ocultar Eixos X / Títulos Y</label>
                     </div>
                     <div id="estatisticas-sem-dados" class="alert alert-info" style="display:none;">Nenhum dado de avaliação ou treino encontrado para os filtros aplicados.</div>
@@ -166,12 +179,7 @@
                                 <canvas id="chart-evaluation-main"></canvas>
                             </div>
                             <div id="eval-all-charts-container" class="row" style="display:none;">
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-peso"></canvas></div></div>
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-massa-gorda"></canvas></div></div>
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-massa-muscular"></canvas></div></div>
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-metabolismo-basal"></canvas></div></div>
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-h2o"></canvas></div></div>
-                                <div class="col-lg-4 col-md-6 mb-3"><div class="chart-container"><canvas id="chart-gordura-visceral"></canvas></div></div>
+                                <!-- Small charts for "all" view will be dynamically added here -->
                             </div>
                         </div>
                     </div>
@@ -200,6 +208,7 @@
 
                     <div id="estatisticas-planos-detalhes" style="display:none;">
                         <h6><i class="fas fa-clipboard-list"></i> Detalhes dos Treinos no Período</h6>
+                         <!-- Detalhes dos planos para estatísticas irão aqui -->
                     </div>
 
                     <div class="mt-4 pt-3 border-top" id="export-options-container" style="display:none;">
@@ -218,12 +227,12 @@
                                 <label class="form-check-label" for="printOptPlanDetails">Detalhes Planos</label>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="imprimirEstatisticas()"><i class="fas fa-print"></i> Imprimir</button>
-                        <button type="button" class="btn btn-outline-success btn-sm" onclick="baixarPdfEstatisticas()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.app.chartManager.imprimirEstatisticas()"><i class="fas fa-print"></i> Imprimir</button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="window.app.chartManager.baixarPdfEstatisticas()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalEstatisticas()">Fechar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.app.modalManager.fecharModalEstatisticas()">Fechar</button>
                 </div>
             </div>
         </div>
@@ -237,6 +246,8 @@
   <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
-  <?!= HtmlService.createHtmlOutputFromFile('script_33').getContent(); ?>
+  <!-- Load the compiled JavaScript module -->
+  <script src="./dist/index.js" type="module"></script>
 </body>
 </html>
+

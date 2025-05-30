@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "ES2020",                     // Specify ECMAScript target version (modern browsers)
+    "module": "ESNext",                      // Specify module code generation: 'ESNext' for modern ESM
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],// Standard library files to be included in the compilation
+    "allowJs": true,                         // Allow JavaScript files to be compiled
+    "jsx": "react",                          // Specify JSX code generation (even if not using React framework, common for .tsx)
+                                             // Use "preserve" if you have another tool (like Babel/Vite) handling JSX transformation later.
+    "outDir": "./dist",                      // Redirect output structure to the directory
+    "rootDir": "./",                         // Specify the root directory of input files. Only affects 'outDir' structure.
+    "removeComments": true,                  // Do not emit comments to output.
+
+    /* Strict Type-Checking Options */
+    "strict": true,                          // Enable all strict type-checking options
+    "noImplicitAny": true,                   // Raise error on expressions and declarations with an implied 'any' type
+    "strictNullChecks": true,                // Enable strict null checks
+    "strictFunctionTypes": true,             // Enable strict checking of function types
+    "strictBindCallApply": true,             // Enable strict 'bind', 'call', and 'apply' methods on functions
+    "strictPropertyInitialization": true,    // Ensure non-undefined class properties are initialized in the constructor
+    "noImplicitThis": true,                  // Raise error on 'this' expressions with an implied 'any' type
+    "alwaysStrict": true,                    // Parse in strict mode and emit "use strict" for each source file
+
+    /* Module Resolution Options */
+    "moduleResolution": "NodeNext",          // Or "Bundler" if using TS 5.0+ and a bundler that expects this.
+                                             // "Node" is also a common fallback for older setups.
+                                             // "NodeNext" helps with modern ESM/CJS interop.
+    "baseUrl": ".",                          // Base directory to resolve non-absolute module names.
+    "paths": {                               // A series of entries which re-map imports to lookup locations relative to the 'baseUrl'.
+      "@modules/*": ["modules/*"],           // Example: import ... from '@modules/api' -> ./modules/api
+      "@config": ["modules/config"],
+      "@domElements": ["modules/domElements"],
+      "@uiUtils": ["modules/uiUtils"],
+      "@api": ["modules/api"],
+      "@planManager": ["modules/planManager"],
+      "@modalManager": ["modules/modalManager"],
+      "@chartManager": ["modules/chartManager"],
+      "@interfaces": ["modules/interfaces"]
+    },
+    "esModuleInterop": true,                 // Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'.
+
+    /* Advanced Options */
+    "skipLibCheck": true,                    // Skip type checking of all declaration files (*.d.ts).
+    "forceConsistentCasingInFileNames": true,// Disallow inconsistently-cased references to the same file.
+    "resolveJsonModule": true,               // Include modules imported with .json extension
+    "isolatedModules": true,                 // Ensure that each file can be safely transpiled without relying on other imports.
+    "noEmit": false                          // IMPORTANT: Set to false (or remove) to actually generate output files.
+                                             // If true, tsc will type-check but not create .js files.
+  },
+  "include": [                             // Specifies an array of filenames or patterns to include in the program.
+    "index.tsx",
+    "modules/**/*.ts"
+    // Add "globals.d.ts" if you create one for global type declarations
+  ],
+  "exclude": [                             // Specifies an array of filenames or patterns that should be skipped when resolving 'include'.
+    "node_modules",
+    "dist"
+  ]
+}

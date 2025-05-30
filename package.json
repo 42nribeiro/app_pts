@@ -1,0 +1,30 @@
+{
+  "name": "protraining-fastify-backend",
+  "version": "1.0.0",
+  "description": "Fastify backend for ProTraining",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "fastify",
+    "nodejs",
+    "googleapi"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0",
+    "fastify": "^4.26.2",
+    "googleapis": "^134.0.0",
+    "sqlite3": "^5.1.7",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "typescript": "^5.8.3"
+  }
+}
